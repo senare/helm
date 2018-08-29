@@ -1,0 +1,54 @@
+- apiVersion: v1
+  data:
+    NEW_FEATURE: 'true'
+  kind: ConfigMap
+  metadata:
+    name: spinnaker-demo-config
+    namespace: default
+- apiVersion: apps/v1beta2
+  kind: Deployment
+  metadata:
+    labels:
+      app: spinnaker
+      source: demo
+      stack: frontend
+    name: spinnaker-demo
+    namespace: default
+  spec:
+    replicas: 3
+    selector:
+      matchLabels:
+        app: spinnaker
+        source: demo
+    template:
+      metadata:
+        labels:
+          app: spinnaker
+          source: demo
+      spec:
+        containers:
+          - envFrom:
+              - configMapRef:
+                  name: spinnaker-demo-config
+            image: index.docker.io/mikwah/hello
+            name: primary
+            ports:
+              - containerPort: 80
+            readinessProbe:
+              httpGet:
+                path: /index.html
+                port: 80
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: spinnaker-demo
+    namespace: default
+  spec:
+    ports:
+      - port: 80
+        protocol: TCP
+        targetPort: 80
+    selector:
+      app: spinnaker
+      source: demo
+
